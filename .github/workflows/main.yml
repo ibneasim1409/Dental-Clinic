@@ -31,4 +31,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Windows Executable
-        path: dist/dental_clinic_app.exe
+        path: dist/dental_clinic.exe
