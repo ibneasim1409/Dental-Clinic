@@ -6,6 +6,7 @@ from tkinter import messagebox, ttk
 from datetime import datetime, timedelta
 from fpdf import FPDF
 import os
+import sys
 
 
 class DentalClinicApp:
@@ -17,41 +18,52 @@ class DentalClinicApp:
         # Initialize Database Handler
         self.db_handler = DatabaseHandler()
 
-        # Center Elements Frame
-        self.center_frame = tk.Frame(root)
-        self.center_frame.pack(expand=True)
+        # Scrollable Canvas Setup
+        self.main_canvas = tk.Canvas(root)
+        self.scrollbar = tk.Scrollbar(root, orient=tk.VERTICAL, command=self.main_canvas.yview)
+        self.scrollable_frame = tk.Frame(self.main_canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+        )
+        self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.main_canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # UI Elements
-        tk.Label(self.center_frame, text="Contact:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        self.contact_entry = tk.Entry(self.center_frame, width=30)
+        tk.Label(self.scrollable_frame, text="Contact:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        self.contact_entry = tk.Entry(self.scrollable_frame, width=30)
         self.contact_entry.grid(row=0, column=1, pady=5)
         self.contact_entry.bind("<FocusOut>", self.load_patient_data)
 
-        tk.Label(self.center_frame, text="Name:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.name_entry = tk.Entry(self.center_frame, width=30)
+        tk.Label(self.scrollable_frame, text="Name:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.name_entry = tk.Entry(self.scrollable_frame, width=30)
         self.name_entry.grid(row=1, column=1, pady=5)
 
-        tk.Label(self.center_frame, text="Age:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.age_entry = tk.Entry(self.center_frame, width=30)
+        tk.Label(self.scrollable_frame, text="Age:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.age_entry = tk.Entry(self.scrollable_frame, width=30)
         self.age_entry.grid(row=2, column=1, pady=5)
 
-        tk.Label(self.center_frame, text="Address:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.address_entry = tk.Entry(self.center_frame, width=30)
+        tk.Label(self.scrollable_frame, text="Address:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        self.address_entry = tk.Entry(self.scrollable_frame, width=30)
         self.address_entry.grid(row=3, column=1, pady=5)
 
-        tk.Label(self.center_frame, text="Date of Visit:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
-        self.date_picker = ttk.Combobox(self.center_frame, values=self.get_date_options(), width=27)
+        tk.Label(self.scrollable_frame, text="Date of Visit:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        self.date_picker = ttk.Combobox(self.scrollable_frame, values=self.get_date_options(), width=27)
         self.date_picker.grid(row=4, column=1, pady=5)
         self.date_picker.set(self.get_date_options()[0])
 
-        tk.Label(self.center_frame, text="Invoice Amount:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
-        self.invoice_entry = tk.Entry(self.center_frame, width=30)
+        tk.Label(self.scrollable_frame, text="Invoice Amount:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+        self.invoice_entry = tk.Entry(self.scrollable_frame, width=30)
         self.invoice_entry.grid(row=5, column=1, pady=5)
 
-        tk.Button(self.center_frame, text="Save Visit", command=self.save_visit, bg="green", fg="white").grid(row=6, column=0, columnspan=2, pady=10)
+        tk.Button(self.scrollable_frame, text="Save Visit", command=self.save_visit, bg="green", fg="white").grid(row=6, column=0, columnspan=2, pady=10)
 
         # Scrollable Patients Table
-        patients_frame = tk.Frame(self.center_frame)
+        patients_frame = tk.Frame(self.scrollable_frame)
         patients_frame.grid(row=8, column=0, columnspan=2, pady=5)
 
         patients_scroll_y = tk.Scrollbar(patients_frame, orient=tk.VERTICAL)
@@ -88,7 +100,7 @@ class DentalClinicApp:
         self.patients_table.bind("<<TreeviewSelect>>", self.load_visits_for_selected_patient)
 
         # Scrollable Visits Table
-        visits_frame = tk.Frame(self.center_frame)
+        visits_frame = tk.Frame(self.scrollable_frame)
         visits_frame.grid(row=10, column=0, columnspan=2, pady=5)
 
         visits_scroll_y = tk.Scrollbar(visits_frame, orient=tk.VERTICAL)
@@ -118,7 +130,7 @@ class DentalClinicApp:
         self.visits_table.bind("<<TreeviewSelect>>", self.show_print_button)
 
         # Print Button
-        self.print_button = tk.Button(self.center_frame, text="Print Invoice", command=self.print_invoice, bg="blue", fg="white")
+        self.print_button = tk.Button(self.scrollable_frame, text="Print Invoice", command=self.print_invoice, bg="blue", fg="white")
         self.print_button.grid(row=11, column=0, columnspan=2, pady=10)
         self.print_button.grid_remove()  # Hide the button initially
 
@@ -205,7 +217,7 @@ class DentalClinicApp:
 
         for visit in visits:
             self.visits_table.insert("", tk.END, values=visit)
-
+    
     def show_print_button(self, event):
         selected_item = self.visits_table.selection()
         if selected_item:
@@ -213,6 +225,15 @@ class DentalClinicApp:
         else:
             self.print_button.grid_remove()
     def print_invoice(self):
+        def get_resource_path(relative_path):
+          """Get the absolute path to a resource, works for development and PyInstaller."""
+          try:
+              # PyInstaller stores resources in _MEIPASS
+              base_path = sys._MEIPASS
+          except AttributeError:
+              # Base path for development
+              base_path = os.path.abspath(".")
+          return os.path.join(base_path, relative_path)
         selected_item = self.visits_table.selection()
         if not selected_item:
             messagebox.showerror("Error", "No visit selected!")
@@ -237,7 +258,8 @@ class DentalClinicApp:
             # Add Logo
             pdf.set_fill_color(255, 255, 255)  # Ensure a white background behind the logo
             pdf.rect(10, y_offset, 190, 25, style="F")  # Draw a rectangle for the logo area
-            pdf.image("header_logo.png", x=10, y=y_offset + 2, w=30, h=20)  # Adjust the logo size and position
+            logo_path = get_resource_path("header_logo.png")
+            pdf.image(logo_path , x=10, y=y_offset + 2, w=30, h=20)  # Adjust the logo size and position
 
             # Add Header Text
             pdf.set_xy(50, y_offset + 5)  # Adjust header text position
