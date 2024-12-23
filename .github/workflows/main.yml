@@ -24,6 +24,9 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
+    - name: List project files
+      run: dir
+      
     - name: Build Windows executable
       run: |
         pyinstaller --onefile --add-data "header_logo.png;." --hidden-import "fpdf" dental_clinic.py
