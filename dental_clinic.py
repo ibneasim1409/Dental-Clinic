@@ -258,7 +258,7 @@ class DentalClinicApp:
             # Add Logo
             pdf.set_fill_color(255, 255, 255)  # Ensure a white background behind the logo
             pdf.rect(10, y_offset, 190, 25, style="F")  # Draw a rectangle for the logo area
-            logo_path = get_resource_path("header_logo.png")
+            logo_path = get_resource_path("header_logo.jpeg")
             pdf.image(logo_path , x=10, y=y_offset + 2, w=30, h=20)  # Adjust the logo size and position
 
             # Add Header Text
@@ -275,7 +275,7 @@ class DentalClinicApp:
             pdf.cell(0, 6, f"Address: {patient[3]}", ln=True)
             pdf.cell(0, 6, f"Visit Number: {visit_number}", ln=True)
             pdf.cell(0, 6, f"Date of Visit: {date_of_visit}", ln=True)
-            pdf.cell(0, 6, f"Invoice Amount: ${invoice}", ln=True)
+            pdf.cell(0, 6, f"Invoice Amount: {invoice} Pkr", ln=True)
 
         pdf_file = f"invoice_patient_{patient_id}_visit_{visit_number}.pdf"
         pdf.output(pdf_file)
