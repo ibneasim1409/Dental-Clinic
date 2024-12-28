@@ -225,7 +225,7 @@ class DentalClinicApp:
         else:
             self.print_button.grid_remove()
     def print_invoice(self):
-        def get_resource_path(relative_path):
+      def get_resource_path(relative_path):
           """Get the absolute path to a resource, works for development and PyInstaller."""
           try:
               # PyInstaller stores resources in _MEIPASS
@@ -234,59 +234,70 @@ class DentalClinicApp:
               # Base path for development
               base_path = os.path.abspath(".")
           return os.path.join(base_path, relative_path)
-        selected_item = self.visits_table.selection()
-        if not selected_item:
-            messagebox.showerror("Error", "No visit selected!")
-            return
+  
+      selected_item = self.visits_table.selection()
+      if not selected_item:
+          messagebox.showerror("Error", "No visit selected!")
+          return
+  
+      visit = self.visits_table.item(selected_item)["values"]
+      visit_id, visit_number, date_of_visit, invoice = visit
+  
+      patient_id = self.db_handler.get_patient_id_by_visit_id(visit_id)
+      patient = self.db_handler.get_patient_by_id(patient_id)
+  
+      pdf = FPDF("L", "mm", "A4")  # Landscape orientation
+      pdf.add_page()
+  
+      # Add vertical lines to separate sections
+      pdf.set_draw_color(0, 0, 0)  # Black color for lines
+      pdf.line(99, 10, 99, 200)  # First vertical line
+      pdf.line(198, 10, 198, 200)  # Second vertical line
+  
+      # Add each copy (Patient, Hospital, Doctor)
+      for idx, header in enumerate(["Patient Copy", "Hospital Copy", "Doctor Copy"]):
+          x_offset = idx * 99  # Adjust X-offset for each section
+  
+          # Add Logo
+          pdf.set_fill_color(255, 255, 255)  # Ensure a white background behind the logo
+          pdf.rect(10 + x_offset, 10, 89, 25, style="F")  # Draw a rectangle for the logo area
+          logo_path = get_resource_path("header_logo.jpeg")
+          pdf.image(logo_path, x=12 + x_offset, y=12, w=25, h=20)  # Adjust the logo size and position
+  
+          # Add Header Text
+          pdf.set_xy(40 + x_offset, 15)  # Adjust header text position
+          pdf.set_font("Arial", "B", 14)
+          pdf.cell(0, 8, header, ln=True, align="L")
+  
+          # Add Patient and Visit Details
+          pdf.set_font("Arial", size=10)
+          y_position = 40  # Start position for details
+          pdf.set_xy(10 + x_offset, y_position)
+          pdf.cell(89, 6, f"Patient ID: {patient[0]}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 10)
+          pdf.cell(89, 6, f"Patient Name: {patient[1]}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 20)
+          pdf.cell(89, 6, f"Age: {patient[2]}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 30)
+          pdf.cell(89, 6, f"Address: {patient[3]}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 40)
+          pdf.cell(89, 6, f"Visit Number: {visit_number}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 50)
+          pdf.cell(89, 6, f"Date of Visit: {date_of_visit}", ln=True)
+          pdf.set_xy(10 + x_offset, y_position + 60)
+          pdf.cell(89, 6, f"Invoice Amount: {invoice} Pkr", ln=True)
+  
+      pdf_file = f"invoice_patient_{patient_id}_visit_{visit_number}.pdf"
+      pdf.output(pdf_file)
+  
+      # Open the PDF
+      if os.name == "posix":
+          os.system(f"xdg-open {pdf_file}")
+      elif os.name == "nt":
+          os.startfile(pdf_file)
+  
+      messagebox.showinfo("Success", f"Invoice saved to {pdf_file} and opened for printing!")
 
-        visit = self.visits_table.item(selected_item)["values"]
-        visit_id, visit_number, date_of_visit, invoice = visit
-
-        patient_id = self.db_handler.get_patient_id_by_visit_id(visit_id)
-        patient = self.db_handler.get_patient_by_id(patient_id)
-
-        pdf = FPDF()
-        pdf.add_page()
-
-        # Add each copy (Patient, Hospital, Doctor)
-        for idx, header in enumerate(["Patient Copy", "Hospital Copy", "Doctor Copy"]):
-            if idx > 0:
-                pdf.line(10, 95 * idx, 200, 95 * idx)  # Add separating line
-
-            y_offset = 10 + (95 * idx)  # Adjust Y-offset for each copy
-
-            # Add Logo
-            pdf.set_fill_color(255, 255, 255)  # Ensure a white background behind the logo
-            pdf.rect(10, y_offset, 190, 25, style="F")  # Draw a rectangle for the logo area
-            logo_path = get_resource_path("header_logo.jpeg")
-            pdf.image(logo_path , x=10, y=y_offset + 2, w=30, h=20)  # Adjust the logo size and position
-
-            # Add Header Text
-            pdf.set_xy(50, y_offset + 5)  # Adjust header text position
-            pdf.set_font("Arial", "B", 14)
-            pdf.cell(0, 8, header, ln=True, align="L")
-
-            # Add Patient and Visit Details
-            pdf.set_font("Arial", size=10)
-            pdf.set_xy(10, y_offset + 30)  # Adjust details position below the logo
-            pdf.cell(0, 6, f"Patient ID: {patient[0]}", ln=True)
-            pdf.cell(0, 6, f"Patient Name: {patient[1]}", ln=True)
-            pdf.cell(0, 6, f"Age: {patient[2]}", ln=True)
-            pdf.cell(0, 6, f"Address: {patient[3]}", ln=True)
-            pdf.cell(0, 6, f"Visit Number: {visit_number}", ln=True)
-            pdf.cell(0, 6, f"Date of Visit: {date_of_visit}", ln=True)
-            pdf.cell(0, 6, f"Invoice Amount: {invoice} Pkr", ln=True)
-
-        pdf_file = f"invoice_patient_{patient_id}_visit_{visit_number}.pdf"
-        pdf.output(pdf_file)
-
-        # Open the PDF
-        if os.name == "posix":
-            os.system(f"xdg-open {pdf_file}")
-        elif os.name == "nt":
-            os.startfile(pdf_file)
-
-        messagebox.showinfo("Success", f"Invoice saved to {pdf_file} and opened for printing!")
 
     def clear_fields(self):
         self.contact_entry.delete(0, tk.END)
