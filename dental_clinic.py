@@ -254,6 +254,13 @@ class DentalClinicApp:
       pdf.line(99, 10, 99, 200)  # First vertical line
       pdf.line(198, 10, 198, 200)  # Second vertical line
   
+      # Footer text
+      footer_text = (
+          "Dental Care Clinic, Dr Waseem Medical Institute, Al hajj market, Khadim Ali Rd, "
+          "Kotli Behram, Sialkot, Punjab\n"
+          "Phone: (052) 4269990, +92 317 2123444"
+      )
+  
       # Add each copy (Patient, Hospital, Doctor)
       for idx, header in enumerate(["Patient Copy", "Hospital Copy", "Doctor Copy"]):
           x_offset = idx * 99  # Adjust X-offset for each section
@@ -287,6 +294,13 @@ class DentalClinicApp:
           pdf.set_xy(10 + x_offset, y_position + 60)
           pdf.cell(89, 6, f"Invoice Amount: {invoice} Pkr", ln=True)
   
+          # Add Footer
+          pdf.set_font("Arial", size=7)  # Smaller font for footer
+          pdf.set_xy(10 + x_offset, 170)  # Position footer closer to the bottom but within bounds
+          pdf.multi_cell(
+              89, 3.5, footer_text, align="C"
+          )  # Adjust line height to ensure all text fits within the section
+  
       pdf_file = f"invoice_patient_{patient_id}_visit_{visit_number}.pdf"
       pdf.output(pdf_file)
   
@@ -297,7 +311,6 @@ class DentalClinicApp:
           os.startfile(pdf_file)
   
       messagebox.showinfo("Success", f"Invoice saved to {pdf_file} and opened for printing!")
-
 
     def clear_fields(self):
         self.contact_entry.delete(0, tk.END)
