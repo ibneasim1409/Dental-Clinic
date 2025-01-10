@@ -16,23 +16,24 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.8'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pyinstaller
+        pip install pyinstaller==4.10
 
     - name: List project files
       run: dir
       
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --add-data "header_logo.jpeg;." --hidden-import "fpdf" dental_clinic.py
+        pyinstaller --onefile --add-data "header_logo.jpeg;." --hidden-import "fpdf" --windows-version-min=6.1 dental_clinic.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: Windows Executable
         path: dist/dental_clinic.exe
+
